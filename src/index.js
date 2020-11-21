@@ -1,26 +1,57 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-
-const useScroll = () => {
-  const [state, setState] = useState({
-    x: 0,
-    y: 0
-  });
-  const onscroll = () => {
-    setState({ y: window.scrollY, x: window.scrollX });
+const useFullscreen = (callback) => {
+  const element = useRef();
+  const runCb = (isFull) => {
+    if (callback && typeof callback === "function") {
+      callback(true);
+    }
   };
-  useEffect(() => {
-    window.addEventListener("scroll", onscroll);
-    return () => window.removeEventListener("scroll", onscroll);
-  }, []);
-  return state;
+  const triggerFull = () => {
+    if (element.current) {
+      if (element.current.requestFullscreen) {
+        element.current.requestFullscreen();
+      } else if (element.current.mozRequestFullscreen) {
+        element.current.mozRequestFullscreen();
+      } else if (element.current.webkitRequestFullscreen) {
+        element.current.webkitRequestFullscreen();
+      } else if (element.current.msRequestFullscreen) {
+        element.current.msRequestFullscreen();
+      }
+      runCb(true);
+    }
+  };
+  const exitFull = () => {
+    document.exitFullscreen();
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+      document.mozCancelFullScreen();
+    } else if (document.webkitCancelFullScreen) {
+      document.webkitCancelFullScreen();
+    } else if (document.msCancelFullScreen) {
+      document.msCancelFullScreen();
+    }
+    runCb(false);
+  };
+  return { element, triggerFull, exitFull };
 };
-
 const App = () => {
-  const { y } = useScroll();
+  const onFullS = (isFull) => {
+    console.log(isFull ? "We are full" : "We are small");
+  };
+  const { element, triggerFull, exitFull } = useFullscreen(onFullS);
   return (
-    <div className="App" style={{ height: "1000vh" }}>
-      <h1 style={{ position: "fixed", color: y > 100 ? "red" : "blue" }}>HI</h1>
+    <div className="App">
+      <div ref={element}>
+        <img
+          src="https://byline.network/wp-content/uploads/2018/05/Dog-original-1-1320x880.jpg"
+          width="200px"
+        />
+        <button onClick={exitFull}>Exit fullscreen</button>
+      </div>
+
+      <button onClick={triggerFull}>Make fullscreen</button>
     </div>
   );
 };
